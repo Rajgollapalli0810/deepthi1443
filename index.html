@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Deepuu</title>
+
+<!--
+  ============================================================
+  QUICK PERSONALIZATION GUIDE
+  ============================================================
+  Search for these tags and edit the text/values next to them:
+    HER_NAME        -> her name (currently "Deepuu")
+    DOB              -> her date of birth, used for the counter
+    FEEL_1/2/3      -> the three "how much I like you" pages
+    QUIZ             -> the 3 quiz questions/answers about her
+    LOVE_NOTE        -> the main emotional birthday message
+    SURPRISE_NOTE    -> the hidden "one more thing" message
+    NEXT_DATE        -> date for the countdown on the surprise page
+    SONG_SRC         -> optional: put an mp3 file next to index.html
+                        in your repo and put its filename here to
+                        enable background music (optional, skip if
+                        you don't want music)
+  ============================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg-deep: #201029;
+    --bg-glow: #4a2158;
+    --rose: #e5789a;
+    --rose-soft: #f2a8bf;
+    --rose-dim: #8a5266;
+    --gold: #eec171;
+    --cream: #f8eee2;
+    --cream-dim: #d9c9c4;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0; padding:0; height:100%;
+    background: radial-gradient(ellipse at 50% 20%, var(--bg-glow), var(--bg-deep) 65%);
+    color: var(--cream);
+    font-family: 'Jost', sans-serif;
+    overflow: hidden;
+  }
+
+  #sky{ position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  #petals{ position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+
+  .stage{
+    position: relative;
+    height: 100vh; width: 100vw;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2;
+  }
+
+  .screen{
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 32px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.7s ease;
+  }
+  .screen.active{ opacity: 1; pointer-events: auto; }
+
+  .eyebrow{
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--rose-soft);
+    margin-bottom: 18px;
+  }
+
+  h1{
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: clamp(36px, 8vw, 64px);
+    line-height: 1.1;
+    margin: 0 0 14px 0;
+  }
+  h1 em{ font-style: italic; color: var(--rose); }
+
+  h2{
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: clamp(26px, 5.5vw, 40px);
+    margin: 0 0 20px 0;
+    max-width: 560px;
+  }
+
+  .sub{
+    max-width: 480px;
+    font-size: 17px;
+    color: var(--cream-dim);
+    line-height: 1.7;
+    margin: 0 0 40px 0;
+  }
+
+  .count{
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: clamp(56px, 14vw, 110px);
+    color: var(--gold);
+    line-height: 1;
+    margin: 4px 0 6px 0;
+  }
+  .count-label{
+    font-size: 15px;
+    color: var(--cream-dim);
+    margin-bottom: 36px;
+  }
+
+  button.enter, button.continue{
+    background: none;
+    border: 1px solid var(--rose-soft);
+    color: var(--cream);
+    font-family: 'Jost', sans-serif;
+    font-size: 16px;
+    padding: 14px 34px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.25s ease, transform 0.2s ease;
+  }
+  button.enter:hover, button.continue:hover{
+    background: rgba(229,120,154,0.18);
+    transform: translateY(-2px);
+  }
+
+  .dots{
+    position: fixed;
+    bottom: 28px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 8px;
+    z-index: 5;
+  }
+  .dots span{
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(248,238,226,0.25);
+    transition: background 0.3s ease, transform 0.3s ease;
+  }
+  .dots span.on{ background: var(--rose); transform: scale(1.3); }
+
+  /* ---- quiz screen ---- */
+  .quiz-box{ max-width: 480px; width: 100%; }
+  .quiz-options{
+    display: flex; flex-direction: column; gap: 12px;
+    margin: 0 auto 20px auto;
+    max-width: 340px;
+  }
+  .quiz-option{
+    font-family: 'Jost', sans-serif;
+    font-size: 16px;
+    padding: 13px 20px;
+    border-radius: 14px;
+    border: 1px solid rgba(248,238,226,0.3);
+    background: rgba(248,238,226,0.04);
+    color: var(--cream);
+    cursor: pointer;
+    transition: background 0.2s ease, border 0.2s ease;
+  }
+  .quiz-option:hover{ background: rgba(229,120,154,0.14); }
+  .quiz-option.correct{ border-color: var(--gold); background: rgba(238,193,113,0.16); }
+  .quiz-option.incorrect{ border-color: var(--rose-dim); background: rgba(138,82,102,0.2); opacity: 0.8; }
+  .quiz-option:disabled{ cursor: default; }
+
+  .quiz-feedback{
+    min-height: 22px;
+    font-style: italic;
+    color: var(--rose-soft);
+    font-size: 15px;
+    margin-bottom: 22px;
+  }
+
+  /* ---- question screen ---- */
+  .question-box{ max-width: 520px; width: 100%; }
+
+  .btn-field{
+    position: relative;
+    height: 200px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 22px;
+  }
+
+  .btn{
+    font-family: 'Jost', sans-serif;
+    font-size: 17px;
+    padding: 15px 36px;
+    border-radius: 999px;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s ease;
+  }
+
+  .yes{
+    background: var(--rose);
+    color: #2a0f1c;
+    font-weight: 500;
+    box-shadow: 0 6px 24px rgba(229,120,154,0.35);
+  }
+
+  .no{
+    background: transparent;
+    border: 1px solid rgba(248,238,226,0.35);
+    color: var(--cream-dim);
+    position: absolute;
+  }
+
+  .taunt{
+    margin-top: 28px;
+    min-height: 20px;
+    font-size: 14px;
+    color: var(--rose-soft);
+    font-style: italic;
+  }
+
+  /* ---- celebration screen ---- */
+  #celebrate .note{
+    max-width: 520px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    line-height: 1.85;
+    color: var(--cream-dim);
+    margin: 16px 0 0 0;
+  }
+  #celebrate .signoff{
+    margin-top: 30px;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 19px;
+    color: var(--rose-soft);
+  }
+
+  .one-more{
+    margin-top: 42px;
+    background: none;
+    border: none;
+    color: var(--cream-dim);
+    font-size: 14px;
+    font-style: italic;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  .one-more.show{ opacity: 1; }
+
+  /* ---- surprise screen ---- */
+  #surprise .note{
+    max-width: 480px;
+    font-size: 17px;
+    line-height: 1.8;
+    color: var(--cream-dim);
+    margin: 0 0 34px 0;
+  }
+  .countdown{
+    display: flex; gap: 22px; justify-content: center;
+    margin-bottom: 10px;
+  }
+  .countdown div{ text-align: center; }
+  .countdown .num{
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: clamp(32px, 6vw, 48px);
+    color: var(--gold);
+    line-height: 1;
+  }
+  .countdown .lbl{
+    font-size: 12px;
+    color: var(--cream-dim);
+    margin-top: 4px;
+  }
+  .countdown-label{
+    font-size: 14px;
+    color: var(--rose-soft);
+    font-style: italic;
+    margin-bottom: 34px;
+  }
+
+  /* ---- music toggle ---- */
+  #musicToggle{
+    position: fixed;
+    bottom: 26px; right: 26px;
+    z-index: 6;
+    background: rgba(248,238,226,0.08);
+    border: 1px solid rgba(248,238,226,0.3);
+    color: var(--cream);
+    font-size: 13px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  #musicToggle:hover{ background: rgba(229,120,154,0.18); }
+
+  canvas#confetti{ position: fixed; inset: 0; z-index: 4; pointer-events: none; }
+
+  @media (prefers-reduced-motion: reduce){
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="sky"></canvas>
+<canvas id="petals"></canvas>
+<canvas id="confetti"></canvas>
+
+<!-- SONG_SRC: put your mp3's filename below (leave blank to skip music) -->
+<audio id="bgSong" loop src="song.mp3"></audio>
+<button id="musicToggle" onclick="toggleMusic()">♪ Play music</button>
+
+<div class="stage">
+
+  <!-- 1: intro -->
+  <div class="screen active" data-screen="intro">
+    <div class="eyebrow">a small something for</div>
+    <h1>Happy Birthday,<br><em>Deepuu</em></h1> <!-- HER_NAME -->
+    <p class="sub">Before the cake, before the wishes — there are a few things I've been wanting to tell you.</p>
+    <button class="enter" data-next>Continue</button>
+  </div>
+
+  <!-- 2: days-alive counter -->
+  <div class="screen" data-screen="counter">
+    <div class="eyebrow">since the 12th of September, 1997</div> <!-- DOB -->
+    <div class="count" id="dayCount">0</div>
+    <div class="count-label">days of you existing in this world</div>
+    <p class="sub">And every single one of them made the world a little brighter, whether you know it or not.</p>
+    <button class="enter" data-next>Continue</button>
+  </div>
+
+  <!-- 3: feeling one -->
+  <div class="screen" data-screen="feel1">
+    <div class="eyebrow">something I don't say enough</div>
+    <h2>You make ordinary days feel like they mean something.</h2>
+    <!-- FEEL_1 -->
+    <p class="sub">A regular Tuesday, a boring afternoon, a long tiring day — somehow, the moment you're in it, it stops feeling so ordinary.</p>
+    <button class="continue" data-next>Keep going</button>
+  </div>
+
+  <!-- 4: feeling two -->
+  <div class="screen" data-screen="feel2">
+    <div class="eyebrow">a little truth</div>
+    <h2>I like you a lot more than I probably show.</h2>
+    <!-- FEEL_2 -->
+    <p class="sub">I'm not always great at saying it out loud, but you're one of the first things I think about, and one of the last too.</p>
+    <button class="continue" data-next>Keep going</button>
+  </div>
+
+  <!-- 5: feeling three -->
+  <div class="screen" data-screen="feel3">
+    <div class="eyebrow">and one more thing</div>
+    <h2>Every little thing about you, I've come to adore.</h2>
+    <!-- FEEL_3 -->
+    <p class="sub">The way you laugh, the way you get excited over the smallest things, the way you care for people without even trying — all of it. All of you.</p>
+    <button class="continue" data-next>One quick game</button>
+  </div>
+
+  <!-- 6: quiz -->
+  <div class="screen" data-screen="quiz">
+    <div class="quiz-box">
+      <div class="eyebrow" id="quizEyebrow">let's see how well you know me</div>
+      <h2 id="quizQuestionText"></h2>
+      <div class="quiz-options" id="quizOptions"></div>
+      <div class="quiz-feedback" id="quizFeedback"></div>
+      <button class="continue" id="quizContinue" style="display:none;" onclick="nextQuizQuestion()">Continue</button>
+    </div>
+  </div>
+
+  <!-- 7: the question -->
+  <div class="screen" data-screen="question">
+    <div class="question-box">
+      <div class="eyebrow">just one question</div>
+      <h2>Will you be with me forever?</h2>
+      <div class="btn-field" id="btnField">
+        <button class="btn yes" id="yesBtn" onclick="sayYes()">Yes, always</button>
+        <button class="btn no" id="noBtn">No</button>
+      </div>
+      <div class="taunt" id="taunt"></div>
+    </div>
+  </div>
+
+  <!-- 8: celebration -->
+  <div class="screen" data-screen="celebrate">
+    <div class="eyebrow">forever it is</div>
+    <h1>Happy Birthday, <em>Deepuu</em>.</h1> <!-- HER_NAME -->
+    <p class="note">
+      Today isn't just about the year you've completed — it's about every
+      version of you I've gotten to know along the way, and every version
+      I still get to meet. Thank you for saying yes, for being exactly who
+      you are, and for letting me be a part of your life. I hope this year
+      gives you every single thing you deserve, and I hope I get to be
+      standing right next to you when it does.
+    </p>
+    <!-- LOVE_NOTE: replace the paragraph above with your own words -->
+    <div class="signoff">happy birthday, my forever — I love you.</div>
+    <button class="one-more" id="oneMoreBtn" onclick="goToSurprise()">psst... one more thing</button>
+  </div>
+
+  <!-- 9: surprise -->
+  <div class="screen" data-screen="surprise">
+    <div class="eyebrow">one more thing</div>
+    <div id="surpriseAsk">
+      <h2>Will you come with me to Kashmir?</h2>
+      <p class="sub">
+        Consider this an official invitation — just the two of us,
+        starting January 1st, 2027. No excuses, just say yes.
+      </p>
+      <!-- SURPRISE_NOTE: edit the line above with your real plan -->
+      <div class="btn-field" id="surpriseBtnField">
+        <button class="btn yes" id="surpriseYesBtn" onclick="acceptTrip()">Yes, let's go</button>
+        <button class="btn no" id="surpriseNoBtn">No</button>
+      </div>
+      <div class="taunt" id="surpriseTaunt"></div>
+    </div>
+    <div id="surpriseAccepted" style="display:none;">
+      <h2>It's settled then.</h2>
+      <p class="sub">Kashmir, January 1st, 2027 — just us. Pack your bags, it's happening.</p>
+      <div class="countdown" id="countdown">
+        <div><div class="num" id="cdDays">0</div><div class="lbl">days</div></div>
+        <div><div class="num" id="cdHours">0</div><div class="lbl">hours</div></div>
+        <div><div class="num" id="cdMins">0</div><div class="lbl">mins</div></div>
+        <div><div class="num" id="cdSecs">0</div><div class="lbl">secs</div></div>
+      </div>
+      <div class="countdown-label">until we leave</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="dots" id="dots"></div>
+
+<script>
+  // ================= screen flow =================
+  const order = ['intro', 'counter', 'feel1', 'feel2', 'feel3', 'quiz', 'question', 'celebrate', 'surprise'];
+  let current = 0;
+
+  const dotsEl = document.getElementById('dots');
+  order.slice(0, order.indexOf('quiz')).forEach((_, i) => {
+    const d = document.createElement('span');
+    if (i === 0) d.classList.add('on');
+    dotsEl.appendChild(d);
+  });
+
+  function render(){
+    order.forEach((id, i) => {
+      document.querySelector(`[data-screen="${id}"]`).classList.toggle('active', i === current);
+    });
+    const quizIdx = order.indexOf('quiz');
+    [...dotsEl.children].forEach((d, i) => d.classList.toggle('on', i === current));
+    dotsEl.style.display = (current >= quizIdx) ? 'none' : 'flex';
+
+    if (order[current] === 'counter') animateCounter();
+    if (order[current] === 'quiz' && !quizStarted) { quizStarted = true; showQuizQuestion(); }
+    if (order[current] === 'celebrate') {
+      setTimeout(() => document.getElementById('oneMoreBtn').classList.add('show'), 2200);
+    }
+    if (order[current] === 'surprise') startCountdown();
+  }
+
+  document.querySelectorAll('[data-next]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      current = Math.min(current + 1, order.length - 1);
+      render();
+    });
+  });
+
+  render();
+
+  // ================= days-alive counter =================
+  function daysAlive(){
+    const dob = new Date(1997, 8, 12); // Sept 12, 1997 -- DOB (month is 0-indexed)
+    const now = new Date();
+    return Math.floor((now - dob) / (1000 * 60 * 60 * 24));
+  }
+
+  let counterAnimated = false;
+  function animateCounter(){
+    if (counterAnimated) return;
+    counterAnimated = true;
+    const target = daysAlive();
+    const el = document.getElementById('dayCount');
+    const duration = 1400;
+    const start = performance.now();
+    function step(now){
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.floor(eased * target).toLocaleString();
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = target.toLocaleString();
+    }
+    requestAnimationFrame(step);
+  }
+
+  // ================= quiz =================
+  // QUIZ: edit the questions, options, and correct answer index (0-based) below
+  const quizQuestions = [
+    {
+      q: "What's my favorite color?",
+      options: ["Blue", "Black", "Green", "Red"],
+      correct: 1,
+      right: "Of course you knew that.",
+      wrongPrefix: "Close — it's actually "
+    },
+    {
+      q: "What's my go-to comfort food?",
+      options: ["Biryani", "Pizza", "Noodles", "Burgers"],
+      correct: 0,
+      right: "Obviously. You pay attention.",
+      wrongPrefix: "Nope, it's "
+    },
+    {
+      q: "Where's my dream trip?",
+      options: ["Goa", "Kashmir", "Switzerland", "Ladakh"],
+      correct: 1,
+      right: "You really do know me well.",
+      wrongPrefix: "Actually, it's "
+    }
+  ];
+
+  let quizStarted = false;
+  let quizIndex = 0;
+
+  function showQuizQuestion(){
+    const item = quizQuestions[quizIndex];
+    document.getElementById('quizQuestionText').textContent = item.q;
+    document.getElementById('quizFeedback').textContent = '';
+    document.getElementById('quizContinue').style.display = 'none';
+
+    const optionsEl = document.getElementById('quizOptions');
+    optionsEl.innerHTML = '';
+    item.options.forEach((opt, i) => {
+      const b = document.createElement('button');
+      b.className = 'quiz-option';
+      b.textContent = opt;
+      b.onclick = () => answerQuiz(i);
+      optionsEl.appendChild(b);
+    });
+  }
+
+  function answerQuiz(choiceIndex){
+    const item = quizQuestions[quizIndex];
+    const buttons = document.querySelectorAll('#quizOptions .quiz-option');
+    buttons.forEach((b, i) => {
+      b.disabled = true;
+      if (i === item.correct) b.classList.add('correct');
+      else if (i === choiceIndex) b.classList.add('incorrect');
+    });
+
+    const feedback = document.getElementById('quizFeedback');
+    feedback.textContent = (choiceIndex === item.correct)
+      ? item.right
+      : item.wrongPrefix + item.options[item.correct] + '.';
+
+    document.getElementById('quizContinue').style.display = 'inline-block';
+  }
+
+  function nextQuizQuestion(){
+    quizIndex++;
+    if (quizIndex < quizQuestions.length) {
+      showQuizQuestion();
+    } else {
+      current = order.indexOf('question');
+      render();
+    }
+  }
+
+  // ================= dodging "no" button =================
+  const noBtn = document.getElementById('noBtn');
+  const yesBtn = document.getElementById('yesBtn');
+  const field = document.getElementById('btnField');
+  const taunt = document.getElementById('taunt');
+  const taunts = [
+    "nice try.",
+    "not today.",
+    "you can't escape this one.",
+    "keep trying, I'm patient.",
+    "that button has other plans.",
+    "forever's the only option here."
+  ];
+  let dodges = 0;
+
+  function dodge(){
+    const fw = field.clientWidth, fh = field.clientHeight;
+    const bw = noBtn.offsetWidth, bh = noBtn.offsetHeight;
+    const maxX = fw - bw - 10;
+    const maxY = fh - bh - 10;
+    const x = Math.random() * maxX - maxX / 2;
+    const y = Math.random() * maxY - maxY / 2;
+    noBtn.style.transform = `translate(${x}px, ${y}px)`;
+    dodges++;
+    taunt.textContent = taunts[Math.min(dodges - 1, taunts.length - 1)];
+    const scale = Math.min(1 + dodges * 0.06, 1.5);
+    yesBtn.style.transform = `scale(${scale})`;
+  }
+
+  noBtn.addEventListener('mouseenter', dodge);
+  noBtn.addEventListener('click', (e) => { e.preventDefault(); dodge(); });
+  noBtn.addEventListener('touchstart', (e) => { e.preventDefault(); dodge(); }, {passive:false});
+
+  // ================= yes / celebration =================
+  function sayYes(){
+    playChime();
+    current = order.indexOf('celebrate');
+    render();
+    launchConfetti();
+  }
+
+  function goToSurprise(){
+    current = order.indexOf('surprise');
+    render();
+  }
+
+  // ================= surprise page: dodging No, accepting the trip =================
+  const surpriseNoBtn = document.getElementById('surpriseNoBtn');
+  const surpriseYesBtn = document.getElementById('surpriseYesBtn');
+  const surpriseField = document.getElementById('surpriseBtnField');
+  const surpriseTaunt = document.getElementById('surpriseTaunt');
+  let surpriseDodges = 0;
+
+  function surpriseDodge(){
+    const fw = surpriseField.clientWidth, fh = surpriseField.clientHeight;
+    const bw = surpriseNoBtn.offsetWidth, bh = surpriseNoBtn.offsetHeight;
+    const maxX = fw - bw - 10;
+    const maxY = fh - bh - 10;
+    const x = Math.random() * maxX - maxX / 2;
+    const y = Math.random() * maxY - maxY / 2;
+    surpriseNoBtn.style.transform = `translate(${x}px, ${y}px)`;
+    surpriseDodges++;
+    surpriseTaunt.textContent = taunts[Math.min(surpriseDodges - 1, taunts.length - 1)];
+    const scale = Math.min(1 + surpriseDodges * 0.06, 1.5);
+    surpriseYesBtn.style.transform = `scale(${scale})`;
+  }
+
+  surpriseNoBtn.addEventListener('mouseenter', surpriseDodge);
+  surpriseNoBtn.addEventListener('click', (e) => { e.preventDefault(); surpriseDodge(); });
+  surpriseNoBtn.addEventListener('touchstart', (e) => { e.preventDefault(); surpriseDodge(); }, {passive:false});
+
+  function acceptTrip(){
+    playChime();
+    document.getElementById('surpriseAsk').style.display = 'none';
+    document.getElementById('surpriseAccepted').style.display = 'block';
+    launchConfetti();
+  }
+
+  // ================= chime sound (no file needed) =================
+  function playChime(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const now = ctx.currentTime;
+      [523.25, 659.25, 783.99].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, now + i * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.15, now + i * 0.12 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.12 + 0.5);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(now + i * 0.12);
+        osc.stop(now + i * 0.12 + 0.55);
+      });
+    } catch(e) { /* audio not supported, ignore */ }
+  }
+
+  // ================= optional background music =================
+  const bgSong = document.getElementById('bgSong');
+  const musicToggle = document.getElementById('musicToggle');
+  let musicPlaying = false;
+  function toggleMusic(){
+    if (!musicPlaying) {
+      bgSong.play().then(() => {
+        musicPlaying = true;
+        musicToggle.textContent = '❚❚ Pause music';
+      }).catch(() => {
+        musicToggle.textContent = 'Add song.mp3 to enable';
+      });
+    } else {
+      bgSong.pause();
+      musicPlaying = false;
+      musicToggle.textContent = '♪ Play music';
+    }
+  }
+
+  // ================= countdown to next date =================
+  // NEXT_DATE: the trip start date
+  const NEXT_DATE = new Date(2027, 0, 1); // January 1, 2027 (month is 0-indexed)
+  let countdownInterval = null;
+  function startCountdown(){
+    if (countdownInterval) return;
+    function tick(){
+      const diff = NEXT_DATE - new Date();
+      const clamp = Math.max(diff, 0);
+      const d = Math.floor(clamp / (1000 * 60 * 60 * 24));
+      const h = Math.floor((clamp / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((clamp / (1000 * 60)) % 60);
+      const s = Math.floor((clamp / 1000) % 60);
+      document.getElementById('cdDays').textContent = d;
+      document.getElementById('cdHours').textContent = h;
+      document.getElementById('cdMins').textContent = m;
+      document.getElementById('cdSecs').textContent = s;
+    }
+    tick();
+    countdownInterval = setInterval(tick, 1000);
+  }
+
+  // ================= ambient background stars =================
+  const sky = document.getElementById('sky');
+  const skyCtx = sky.getContext('2d');
+  function sizeSky(){ sky.width = innerWidth; sky.height = innerHeight; }
+  sizeSky();
+  addEventListener('resize', sizeSky);
+
+  const stars = Array.from({length: 90}, () => ({
+    x: Math.random() * innerWidth,
+    y: Math.random() * innerHeight,
+    r: Math.random() * 1.4 + 0.3,
+    a: Math.random(),
+    speed: Math.random() * 0.015 + 0.003
+  }));
+
+  function drawSky(){
+    skyCtx.clearRect(0, 0, sky.width, sky.height);
+    stars.forEach(s => {
+      s.a += s.speed;
+      const alpha = (Math.sin(s.a) + 1) / 2 * 0.8 + 0.15;
+      skyCtx.beginPath();
+      skyCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      skyCtx.fillStyle = `rgba(248,238,226,${alpha})`;
+      skyCtx.fill();
+    });
+    requestAnimationFrame(drawSky);
+  }
+  drawSky();
+
+  // ================= falling hearts (sensory touch) =================
+  const petals = document.getElementById('petals');
+  const pCtx = petals.getContext('2d');
+  function sizePetals(){ petals.width = innerWidth; petals.height = innerHeight; }
+  sizePetals();
+  addEventListener('resize', sizePetals);
+
+  const petalColors = ['#e5789a', '#f2a8bf', '#eec171', '#c98bd8'];
+  const heartPetals = Array.from({length: 34}, () => ({
+    x: Math.random() * innerWidth,
+    y: Math.random() * innerHeight,
+    size: Math.random() * 8 + 6,
+    speed: Math.random() * 0.5 + 0.3,
+    sway: Math.random() * 2,
+    swaySpeed: Math.random() * 0.01 + 0.005,
+    swayOffset: Math.random() * Math.PI * 2,
+    color: petalColors[Math.floor(Math.random() * petalColors.length)],
+    alpha: Math.random() * 0.4 + 0.35
+  }));
+
+  function drawHeart(ctx, x, y, size, color, alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    const top = size * 0.3;
+    ctx.beginPath();
+    ctx.moveTo(x, y + top);
+    ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + top);
+    ctx.bezierCurveTo(x - size / 2, y + (size + top) / 2, x, y + (size + top) / 2, x, y + size);
+    ctx.bezierCurveTo(x, y + (size + top) / 2, x + size / 2, y + (size + top) / 2, x + size / 2, y + top);
+    ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + top);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPetals(){
+    pCtx.clearRect(0, 0, petals.width, petals.height);
+    heartPetals.forEach(p => {
+      p.y += p.speed;
+      p.swayOffset += p.swaySpeed;
+      const x = p.x + Math.sin(p.swayOffset) * p.sway * 20;
+      if (p.y > petals.height + 20) {
+        p.y = -20;
+        p.x = Math.random() * petals.width;
+      }
+      drawHeart(pCtx, x, p.y, p.size, p.color, p.alpha);
+    });
+    requestAnimationFrame(drawPetals);
+  }
+  drawPetals();
+
+  // ================= confetti burst =================
+  const confettiCanvas = document.getElementById('confetti');
+  const cCtx = confettiCanvas.getContext('2d');
+  function sizeConfetti(){ confettiCanvas.width = innerWidth; confettiCanvas.height = innerHeight; }
+  sizeConfetti();
+  addEventListener('resize', sizeConfetti);
+
+  const colors = ['#e5789a', '#eec171', '#f2a8bf', '#f8eee2', '#c98bd8'];
+
+  function launchConfetti(){
+    const pieces = Array.from({length: 160}, () => ({
+      x: Math.random() * confettiCanvas.width,
+      y: -20 - Math.random() * confettiCanvas.height * 0.5,
+      w: Math.random() * 8 + 4,
+      h: Math.random() * 12 + 6,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      speedY: Math.random() * 2.5 + 1.5,
+      speedX: Math.random() * 2 - 1,
+      rotation: Math.random() * 360,
+      rotSpeed: Math.random() * 8 - 4
+    }));
+
+    let frame = 0;
+    const maxFrames = 420;
+
+    function animate(){
+      frame++;
+      cCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      pieces.forEach(p => {
+        p.y += p.speedY;
+        p.x += p.speedX;
+        p.rotation += p.rotSpeed;
+        if (p.y > confettiCanvas.height + 20) {
+          p.y = -20;
+          p.x = Math.random() * confettiCanvas.width;
+        }
+        cCtx.save();
+        cCtx.translate(p.x, p.y);
+        cCtx.rotate(p.rotation * Math.PI / 180);
+        cCtx.fillStyle = p.color;
+        cCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        cCtx.restore();
+      });
+      if (frame < maxFrames) requestAnimationFrame(animate);
+      else cCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    }
+    animate();
+  }
+</script>
+
+</body>
+</html>
